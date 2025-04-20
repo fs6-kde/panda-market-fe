@@ -1,10 +1,19 @@
-// "use client";
+"use client";
 
 import Image from "next/image";
 import Logo from "@/assests/logo.svg";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+// 이동시 텍스트 색상 유지를 위해 usePathname 적용
 
 export default function Header() {
+  const pathname = usePathname();
+
+  const navItems = [
+    { name: "자유게시판", href: "/article" },
+    { name: "중고마켓", href: "/market" },
+  ];
+
   return (
     <header className="fixed top-0 left-0 w-full h-[60px] flex items-center justify-between px-4 xl:px-[200px] bg-white border-b border-gray-200 z-[999]">
       <div className="flex items-center max-w-[1200px] w-full mx-auto">
@@ -12,20 +21,28 @@ export default function Header() {
           <Image
             src={Logo}
             alt="판다마켓 로고"
-            width="153"
+            width={153}
+            height={40}
             className="mr-4 md:mr-[35px] xl:mr-[47px]"
           />
         </Link>
         <nav>
-          <ul className="flex list-none gap-2 md:gap-9 text-gray-600 font-bold text-base md:text-lg">
-            <Link href="/article">
-              <li>자유게시판</li>
-            </Link>
-            <Link href="/market">
-              <li>중고마켓</li>
-            </Link>
-            {/* 데스크탑 전용 요소 예시 */}
-            {/* <li className="hidden xl:inline text-gray-400">|</li> */}
+          <ul className="flex gap-2 md:gap-9 font-bold text-base md:text-lg">
+            {navItems.map((item) => {
+              const isClick = pathname.startsWith(item.href);
+              return (
+                <li key={item.name}>
+                  <Link
+                    href={item.href}
+                    className={`transition ${
+                      isClick ? "text-blue-500" : "text-gray-600"
+                    } hover:text-blue-500`}
+                  >
+                    {item.name}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </nav>
       </div>

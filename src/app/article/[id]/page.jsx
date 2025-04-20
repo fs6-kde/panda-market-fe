@@ -24,8 +24,11 @@ export default function ArticlePage({ articleId }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { id } = useParams();
   const [article, setArticle] = useState(null);
-  const menuRef = useRef({}); // 바깥 클릭해도 닫히게
   const [openMenuId, setOpenMenuId] = useState(null);
+
+  // 메뉴 ref 분리
+  const articleMenuRef = useRef(null);
+  const commentMenuRefs = useRef({});
 
   // 댓글 상태
   const [comments, setComments] = useState([]);
@@ -86,23 +89,33 @@ export default function ArticlePage({ articleId }) {
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      for (const ref of Object.values(menuRef.current)) {
-        if (ref instanceof HTMLElement && ref.contains(e.target)) {
-          return;
-        }
+      // 게시글 메뉴 영역 밖 클릭
+      if (
+        articleMenuRef.current &&
+        !articleMenuRef.current.contains(e.target)
+      ) {
+        setMenuOpen(false);
       }
 
-      // 외부 클릭: 메뉴 닫기
-      // 이 부분 변수 중복이므로 하나로 통일
-      setOpenMenuId(null);
-      setMenuOpen(null);
+      // 댓글 메뉴 중 하나라도 내부 클릭이면 유지
+      const isInsideAnyCommentMenu = Object.values(
+        commentMenuRefs.current
+      ).some((ref) => ref instanceof HTMLElement && ref.contains(e.target));
+      if (!isInsideAnyCommentMenu) {
+        setOpenMenuId(null);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  if (!article) return <p className="mt-20 text-center">로딩 중...</p>;
+  if (!article)
+    return (
+      <p className="flex justify-center items-center min-h-screen">
+        로딩 중...
+      </p>
+    );
 
   return (
     <main className="flex flex-col items-center justify-center min-h-screen px-4 py-12">
@@ -113,7 +126,7 @@ export default function ArticlePage({ articleId }) {
             <h1 className="text-lg font-semibold max-w-[90%]">
               {article.title}
             </h1>
-            <div className="relative" ref={menuRef}>
+            <div className="relative" ref={articleMenuRef}>
               <button onClick={() => setMenuOpen((prev) => !prev)}>
                 <Image src={menuIcon} alt="menu" width={3} height={3} />
               </button>
@@ -123,6 +136,7 @@ export default function ArticlePage({ articleId }) {
                     className="w-full px-4 py-2 hover:bg-gray-50 text-left"
                     onClick={() => {
                       router.push(`/writes?id=${id}`);
+                      setMenuOpen(false);
                     }}
                   >
                     수정하기
@@ -142,7 +156,7 @@ export default function ArticlePage({ articleId }) {
                         console.error("삭제 실패:", err);
                         alert("게시글 삭제에 실패했습니다.");
                       } finally {
-                        setMenuOpen(null);
+                        setMenuOpen(false);
                       }
                     }}
                   >
@@ -243,7 +257,7 @@ export default function ArticlePage({ articleId }) {
                           rows="3"
                           value={editedContent}
                           onChange={(e) => setEditedContent(e.target.value)}
-                          className="w-full bg-gray-100 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full bg-gray-100 border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
                     ) : (
@@ -252,7 +266,7 @@ export default function ArticlePage({ articleId }) {
                         <div
                           className="relative"
                           ref={(el) => {
-                            if (el) menuRef.current[c.id] = el;
+                            if (el) commentMenuRefs.current[c.id] = el;
                           }}
                         >
                           <button onClick={() => setOpenMenuId(c.id)}>
@@ -325,7 +339,7 @@ export default function ArticlePage({ articleId }) {
                         </div>
                       </div>
 
-                      {/* 수정하기 */}
+                      {/* 수정할 때 나타나는 버튼 */}
                       {isEditing && (
                         <div className="flex gap-2">
                           <button

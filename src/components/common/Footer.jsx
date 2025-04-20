@@ -9,14 +9,12 @@ import Image from "next/image";
 
 export default function Footer() {
   return (
-    <footer className="bg-[#111827] text-gray-400 text-sm px-4 py-8 l:px-[200px] l:py-[100px] flex flex-wrap justify-center gap-80">
+    <footer className="bg-[#111827] text-gray-400 text-sm px-4 py-6 xl:px-[200px] xl:py-6 h-24 flex items-start justify-between">
       {/* 왼쪽: 카피라이트 */}
-      <div className="order-3 w-full text-center xl:order-1 xl:w-auto">
-        ©codeit - 2024
-      </div>
+      <div className="text-center xl:text-left">©codeit - 2024</div>
 
       {/* 가운데: 메뉴 */}
-      <ul className="flex gap-6 justify-center w-full xl:order-2 xl:w-auto">
+      <ul className="hidden xl:flex gap-6">
         <li>
           <a href="#" className="hover:text-white transition">
             Privacy Policy
@@ -30,7 +28,7 @@ export default function Footer() {
       </ul>
 
       {/* 오른쪽: 소셜 아이콘 */}
-      <div className="flex gap-3 justify-center xl:order-3 xl:w-auto">
+      <div className="flex gap-3">
         <a href="#" className="hover:opacity-80 transition">
           <Image src={FacebookIcon} alt="Facebook" className="w-5 h-5" />
         </a>

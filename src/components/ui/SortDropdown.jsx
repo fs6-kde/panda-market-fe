@@ -3,12 +3,11 @@
 import React, { useState } from "react";
 import { ChevronDown } from "lucide-react";
 
-export default function SortDropdown() {
+export default function SortDropdown({ selected, onChange }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selected, setSelected] = useState("최신순");
 
   const handleSelect = (value) => {
-    setSelected(value);
+    onChange(value);
     setIsOpen(false);
   };
 

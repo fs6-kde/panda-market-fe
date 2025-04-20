@@ -51,7 +51,10 @@ export default function WritePage() {
         router.push(`/article/${id}`);
       } else {
         // 등록하기
-        const created = await postArticle({ title, content });
+        const created = await postArticle({
+          title,
+          content,
+        });
         router.push(`/article/${created.id}`);
       }
     } catch (error) {
@@ -90,7 +93,7 @@ export default function WritePage() {
               onBlur={() => setTitlePlaceholder("제목을 입력해주세요")}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-gray-100 border border-gray-200 rounded-lg px-4 py-3 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-gray-100 border border-gray-200 rounded-lg px-4 py-3 text-sm placeholder-gray-400 focus:outline-none hover:bg-gray-200 transition cursor-pointer focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -103,7 +106,7 @@ export default function WritePage() {
               onBlur={() => setContentPlaceholder("내용을 입력해주세요")}
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              className="w-full bg-gray-100 border border-gray-200 rounded-lg px-4 py-3 text-sm placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-gray-100 border border-gray-200 rounded-lg px-4 py-3 text-sm placeholder-gray-400 resize-none focus:outline-none hover:bg-gray-200 transition cursor-pointer focus:ring-2 focus:ring-blue-500"
             ></textarea>
           </div>
         </form>
