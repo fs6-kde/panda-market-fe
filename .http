@@ -1,0 +1,64 @@
+POST https://panda-market-api.vercel.app/auth/signUp
+Content-Type: application/json
+
+{
+  "email": "kde040508@lmail.com",
+  "nickname": "김다은",
+  "password": "qwer1234",
+  "passwordConfirmation": "qwer1234"
+}
+
+###
+
+POST https://panda-market-api.vercel.app/auth/signIn
+Content-Type: application/json
+
+{
+    "email": "kde040508@gmail.com",
+    "password": "qwer1234"
+}
+
+###
+
+GET https://panda-market-api.vercel.app/products?page=1&pageSize=10&orderBy=recent
+
+###
+
+GET https://panda-market-api.vercel.app/products/1
+
+###
+POST https://panda-market-api.vercel.app/products/3/comments
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTAxNCwic2NvcGUiOiJhY2Nlc3MiLCJpYXQiOjE3NDYyNTMxODcsImV4cCI6MTc0NjI1NDk4NywiaXNzIjoic3AtcGFuZGEtbWFya2V0In0.XO7unHMmkq58vqHctFeyyefJu5Cys8PmWX8U7Z8RsXQ
+
+{
+  "content": "멋져요"
+}
+
+###
+GET https://panda-market-api.vercel.app/products/3/comments?limit=5
+
+###
+POST https://panda-market-api.vercel.app/products
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTAxNCwic2NvcGUiOiJhY2Nlc3MiLCJpYXQiOjE3NDYyNTMxODcsImV4cCI6MTc0NjI1NDk4NywiaXNzIjoic3AtcGFuZGEtbWFya2V0In0.XO7unHMmkq58vqHctFeyyefJu5Cys8PmWX8U7Z8RsXQ
+
+{
+  "images": [
+    "https://sprint-fe-project.s3.ap-northeast-2.amazonaws.com/Sprint_Mission/user/1014/1746253255373/image1.png"
+  ],
+  "tags": [
+    "귀여움 주의", "쓸데없어서 팝니다다"
+  ],
+  "price": 20000,
+  "description": "50장 정도 있습니다",
+  "name": "정체 모르는 생물 스티커"
+}
+
+###
+POST https://panda-market-api.vercel.app/products/5/favorite
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTAxNCwic2NvcGUiOiJhY2Nlc3MiLCJpYXQiOjE3NDYzNjMxNjEsImV4cCI6MTc0NjM2NDk2MSwiaXNzIjoic3AtcGFuZGEtbWFya2V0In0.-m52ajWxvKhCqZ9u_2CnyvhsHAcC6Un54H22R_BQmAw
+
+###
+DELETE https://panda-market-api.vercel.app/products/5/favorite
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTAxNCwic2NvcGUiOiJhY2Nlc3MiLCJpYXQiOjE3NDYzNjYyNDYsImV4cCI6MTc0NjM2ODA0NiwiaXNzIjoic3AtcGFuZGEtbWFya2V0In0.M3_BgVVTwslJ9In2u8qLvbK2gU2-YJ7M2pamSXGLs0I

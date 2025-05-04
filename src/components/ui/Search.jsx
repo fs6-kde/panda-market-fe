@@ -25,7 +25,7 @@ export default function Search({ onSearch }) {
         placeholder={placeholder}
         onFocus={() => setPlaceholder("")}
         onBlur={() => setPlaceholder("검색할 상품을 입력해주세요")}
-        className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-100 text-sm text-gray-700 placeholder-gray-400 outline-none hover:bg-gray-200 transition cursor-pointer focus:ring-1 focus:ring-blue-500 focus:bg-gray-100"
+        className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-100 text-[13px] text-gray-700 placeholder-gray-400 outline-none hover:bg-gray-200 transition cursor-pointer focus:ring-1 focus:ring-blue-500 focus:bg-gray-100"
       />
     </div>
   );
