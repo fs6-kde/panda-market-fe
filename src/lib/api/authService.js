@@ -2,28 +2,29 @@ import { defaultFetch } from "./fetchClient";
 
 export const authService = {
   login: async (email, password) => {
-    const data = await defaultFetch("/auth/signIn", {
+    const data = await defaultFetch("/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
     });
 
-    localStorage.setItem("accessToken", data.accessToken);
-    return data.user;
+    return {
+      accessToken: data.accessToken,
+      user: {
+        id: data.id,
+        email: data.email,
+        nickName: data.nickName,
+      },
+    };
   },
 
-  register: async (nickname, email, password) => {
-    return await defaultFetch("/auth/signUp", {
+  register: async (nickName, email, password) => {
+    return await defaultFetch("/users", {
       method: "POST",
-      body: JSON.stringify({
-        nickname,
-        email,
-        password,
-        passwordConfirmation: password,
-      }),
+      body: JSON.stringify({ email, nickName, password }),
     });
   },
 
   logout: () => {
-    localStorage.removeItem("accessToken");
+    // 추후 구현 예정
   },
 };

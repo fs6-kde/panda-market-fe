@@ -9,9 +9,7 @@ export async function getProducts({
     orderBy,
   });
 
-  const res = await fetch(
-    `https://panda-market-api.vercel.app/products?${query.toString()}`
-  );
+  const res = await fetch(`http://localhost:3000/products?${query.toString()}`);
 
   if (!res.ok) {
     throw new Error("상품 목록을 불러오지 못했습니다.");
@@ -21,19 +19,10 @@ export async function getProducts({
 }
 
 export async function getProduct(id) {
-  const token = localStorage.getItem("accessToken");
-  if (!token) {
-    throw new Error("Unauthorized");
-  }
-  const res = await fetch(
-    `https://panda-market-api.vercel.app/products/${id}`,
-    {
-      cache: "no-store",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+  const res = await fetch(`http://localhost:3000/products/${id}`, {
+    cache: "no-store",
+    credentials: "include",
+  });
 
   if (!res.ok) {
     throw new Error("해당 상품을 불러오지 못했습니다.");

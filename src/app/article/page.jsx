@@ -91,7 +91,7 @@ export default function Article() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold">게시글</h2>
           <Link href="/writes">
-            <button className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold">
+            <button className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium">
               글쓰기
             </button>
           </Link>

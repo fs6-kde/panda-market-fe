@@ -61,13 +61,18 @@ export default function Market() {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-10">
         {bestProducts.map((product) => (
           <div key={product.id}>
-            <Image
-              src={product.images?.[0] || test}
+            <img
+              src={
+                product.images?.[0]
+                  ? `http://localhost:3000${product.images[0]}`
+                  : test.src
+              }
               alt={product.name}
               width={300}
-              height={300}
+              height={150}
               className="rounded-md object-cover w-full h-[150px]"
             />
+
             <p className="mt-2 text-sm text-gray-700">{product.name}</p>
             <p className="text-base font-bold text-gray-900">
               {product.price.toLocaleString()}원
@@ -91,9 +96,11 @@ export default function Market() {
           </div>
 
           {/* 상품 등록하기 버튼 */}
-          <button className="bg-blue-500 hover:bg-blue-600 text-white text-sm px-6 py-2 rounded-lg whitespace-nowrap">
-            상품 등록하기
-          </button>
+          <Link href="/market/posts">
+            <button className="bg-blue-500 hover:bg-blue-600 text-white text-sm px-6 py-2 rounded-lg whitespace-nowrap">
+              상품 등록하기
+            </button>
+          </Link>
 
           {/* 정렬 드롭다운 */}
           <SortDropdown selected={sortOption} onChange={setSortOption} />
@@ -104,11 +111,15 @@ export default function Market() {
         {products.map((product) => (
           <Link key={product.id} href={`/market/${product.id}`}>
             <div>
-              <Image
-                src={product.images?.[0] || test}
+              <img
+                src={
+                  product.images?.[0]
+                    ? `http://localhost:3000${product.images[0]}`
+                    : test.src
+                }
                 alt={product.name}
                 width={300}
-                height={300}
+                height={150}
                 className="rounded-md object-cover w-full h-[150px]"
               />
               <p className="mt-2 text-sm text-gray-700">{product.name}</p>

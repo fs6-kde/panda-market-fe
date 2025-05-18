@@ -29,7 +29,7 @@ GET https://panda-market-api.vercel.app/products/1
 ###
 POST https://panda-market-api.vercel.app/products/3/comments
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTAxNCwic2NvcGUiOiJhY2Nlc3MiLCJpYXQiOjE3NDYyNTMxODcsImV4cCI6MTc0NjI1NDk4NywiaXNzIjoic3AtcGFuZGEtbWFya2V0In0.XO7unHMmkq58vqHctFeyyefJu5Cys8PmWX8U7Z8RsXQ
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTAxNCwic2NvcGUiOiJhY2Nlc3MiLCJpYXQiOjE3NDcwOTkzMzcsImV4cCI6MTc0NzEwMTEzNywiaXNzIjoic3AtcGFuZGEtbWFya2V0In0.E583TAaOO27xvOftSkKubO91K6GV2tuaexrcx6rA9to
 
 {
   "content": "멋져요"
@@ -41,24 +41,45 @@ GET https://panda-market-api.vercel.app/products/3/comments?limit=5
 ###
 POST https://panda-market-api.vercel.app/products
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTAxNCwic2NvcGUiOiJhY2Nlc3MiLCJpYXQiOjE3NDYyNTMxODcsImV4cCI6MTc0NjI1NDk4NywiaXNzIjoic3AtcGFuZGEtbWFya2V0In0.XO7unHMmkq58vqHctFeyyefJu5Cys8PmWX8U7Z8RsXQ
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTAxNCwic2NvcGUiOiJhY2Nlc3MiLCJpYXQiOjE3NDcwMjUyNzAsImV4cCI6MTc0NzAyNzA3MCwiaXNzIjoic3AtcGFuZGEtbWFya2V0In0.byfXtlqgr0Fh3b5E2vNWadIFP2t42Yvsq1JCFaWVg6Q
 
 {
   "images": [
-    "https://sprint-fe-project.s3.ap-northeast-2.amazonaws.com/Sprint_Mission/user/1014/1746253255373/image1.png"
+    "https://sprint-fe-project.s3.ap-northeast-2.amazonaws.com/Sprint_Mission/user/1014/1746780352164/food.png"
   ],
   "tags": [
-    "귀여움 주의", "쓸데없어서 팝니다다"
+    "맛나겟쥬?", "내가 팔아서 더 비쌈"
   ],
-  "price": 20000,
-  "description": "50장 정도 있습니다",
-  "name": "정체 모르는 생물 스티커"
+  "price": 10000,
+  "description": "진짜 맛있습니다. 드셔보셔요",
+  "name": "유부 우동 컵라면"
 }
 
 ###
 POST https://panda-market-api.vercel.app/products/5/favorite
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTAxNCwic2NvcGUiOiJhY2Nlc3MiLCJpYXQiOjE3NDYzNjMxNjEsImV4cCI6MTc0NjM2NDk2MSwiaXNzIjoic3AtcGFuZGEtbWFya2V0In0.-m52ajWxvKhCqZ9u_2CnyvhsHAcC6Un54H22R_BQmAw
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTAxNCwic2NvcGUiOiJhY2Nlc3MiLCJpYXQiOjE3NDc1NzYzMzgsImV4cCI6MTc0NzU3ODEzOCwiaXNzIjoic3AtcGFuZGEtbWFya2V0In0.Q7-nN9y0qFdlhZmfWXsGXEmDVnf3Vne3ws_D0cIoi-A
 
 ###
 DELETE https://panda-market-api.vercel.app/products/5/favorite
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTAxNCwic2NvcGUiOiJhY2Nlc3MiLCJpYXQiOjE3NDYzNjYyNDYsImV4cCI6MTc0NjM2ODA0NiwiaXNzIjoic3AtcGFuZGEtbWFya2V0In0.M3_BgVVTwslJ9In2u8qLvbK2gU2-YJ7M2pamSXGLs0I
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTAxNCwic2NvcGUiOiJhY2Nlc3MiLCJpYXQiOjE3NDc1Nzk0ODksImV4cCI6MTc0NzU4MTI4OSwiaXNzIjoic3AtcGFuZGEtbWFya2V0In0.VBrK8VWQCSKBn74dYUB38EZmhvGkHu1dXrEDFdNxpeY
+
+### 상품 삭제
+DELETE  https://panda-market-api.vercel.app/products/789
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTAxNCwic2NvcGUiOiJhY2Nlc3MiLCJpYXQiOjE3NDcwMTI4NDcsImV4cCI6MTc0NzAxNDY0NywiaXNzIjoic3AtcGFuZGEtbWFya2V0In0.HaxBhbWUmoLfljWwovZMIiFiuQFtpqRHZEmtPxZ-nik
+
+### 상품 수정
+PATCH https://panda-market-api.vercel.app/products/836
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTAxNCwic2NvcGUiOiJhY2Nlc3MiLCJpYXQiOjE3NDcwMjUyNzAsImV4cCI6MTc0NzAyNzA3MCwiaXNzIjoic3AtcGFuZGEtbWFya2V0In0.byfXtlqgr0Fh3b5E2vNWadIFP2t42Yvsq1JCFaWVg6Q
+
+{
+  "images": [
+    "https://sprint-fe-project.s3.ap-northeast-2.amazonaws.com/Sprint_Mission/user/1014/1746780352164/food.png"
+  ],
+  "tags": [
+    "맛나겟쥬?", "내가 팔아서 더 비쌈"
+  ],
+  "price": 20000,
+  "description": "드셔보셔요",
+  "name": "컵라면"
+}

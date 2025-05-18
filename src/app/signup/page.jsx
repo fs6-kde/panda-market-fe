@@ -14,12 +14,12 @@ import ErrorModal from "@/components/ui/ErrorModal";
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("");
-  const [nickname, setNickname] = useState("");
+  const [nickName, setNickName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const [emailError, setEmailError] = useState(true);
-  const [nicknameError, setNicknameError] = useState(true);
+  const [nickNameError, setNickNameError] = useState(true);
   const [passwordError, setPasswordError] = useState(true);
   const [confirmPasswordError, setConfirmPasswordError] = useState(true);
 
@@ -33,11 +33,11 @@ export default function SignUpPage() {
   // 버튼 활성화 조건: 모든 필드 값 존재 && 에러 없음
   const isButtonEnabled =
     email &&
-    nickname &&
+    nickName &&
     password &&
     confirmPassword &&
     !emailError &&
-    !nicknameError &&
+    !nickNameError &&
     !passwordError &&
     !confirmPasswordError;
 
@@ -45,13 +45,15 @@ export default function SignUpPage() {
     e.preventDefault();
     setModalMessage("");
     setLoading(true);
+
     try {
-      await register(nickname, email, password);
+      await register(nickName, email, password);
       router.push("/market");
     } catch (err) {
-      if (err.message === "이미 사용중인 이메일입니다.") {
+      const message = err.message || "";
+      if (message.includes("이메일")) {
         setModalMessage("이미 사용중인 이메일입니다.");
-      } else if (err.message === "이미 사용중인 닉네임입니다.") {
+      } else if (message.includes("닉네임")) {
         setModalMessage("이미 사용중인 닉네임입니다.");
       } else {
         setModalMessage("회원가입에 실패했습니다.");
@@ -84,10 +86,10 @@ export default function SignUpPage() {
           <InputField
             label="닉네임"
             placeholder="닉네임을 입력해주세요"
-            value={nickname}
-            setValue={setNickname}
+            value={nickName}
+            setValue={setNickName}
             required
-            setErrorState={setNicknameError}
+            setErrorState={setNickNameError}
           />
           <PasswordField
             label="비밀번호"

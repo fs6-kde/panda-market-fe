@@ -61,7 +61,7 @@ export default function Header() {
             className="rounded-full"
           />
           <div className="text-gray-700 font-medium text-sm md:text-base whitespace-nowrap">
-            {user.nickname}
+            {user.nickName}
           </div>
         </div>
       ) : (

@@ -1,8 +1,8 @@
 "use client";
 
+import { createContext, useContext, useEffect, useState } from "react";
 import { authService } from "@/lib/api/authService";
 import { userService } from "@/lib/api/userService";
-import { createContext, useContext, useEffect, useState } from "react";
 
 const AuthContext = createContext({
   login: () => {},
@@ -10,6 +10,7 @@ const AuthContext = createContext({
   register: () => {},
   updateUser: () => {},
   user: null,
+  accessToken: null,
 });
 
 export const useAuth = () => {
@@ -22,10 +23,27 @@ export const useAuth = () => {
 
 export default function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [accessToken, setAccessToken] = useState(null);
 
-  const getUser = async () => {
+  const login = async (email, password) => {
+    const { accessToken, user } = await authService.login(email, password);
+    setAccessToken(accessToken);
+    setUser(user);
+  };
+
+  const register = async (nickName, email, password) => {
+    await authService.register(nickName, email, password);
+    await login(email, password); // 자동 로그인
+  };
+
+  const logout = () => {
+    setAccessToken(null);
+    setUser(null);
+  };
+
+  const getUser = async (token) => {
     try {
-      const userData = await userService.getMe();
+      const userData = await userService.getMe(token);
       setUser(userData);
     } catch (error) {
       console.error("사용자 정보를 가져오는데 실패했습니다:", error);
@@ -33,24 +51,28 @@ export default function AuthProvider({ children }) {
     }
   };
 
-  const login = async (email, password) => {
-    const userData = await authService.login(email, password);
-    setUser(userData);
-  };
+  const refreshAccessToken = async () => {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/token/refresh`,
+        {
+          method: "POST",
+          credentials: "include", // 쿠키 전송
+        }
+      );
+      if (!res.ok) throw new Error("토큰 갱신 실패");
 
-  const register = async (nickname, email, password) => {
-    await authService.register(nickname, email, password);
-    await login(email, password); // 회원가입 후 자동 로그인
-  };
-
-  const logout = () => {
-    authService.logout();
-    setUser(null);
+      const data = await res.json();
+      return data.accessToken;
+    } catch (err) {
+      console.warn("자동 토큰 갱신 실패:", err);
+      return null;
+    }
   };
 
   const updateUser = async (updated) => {
     try {
-      const updatedUser = await userService.updateMe(updated);
+      const updatedUser = await userService.updateMe(accessToken, updated);
       setUser(updatedUser);
     } catch (error) {
       console.error("사용자 정보 업데이트 실패:", error);
@@ -58,11 +80,20 @@ export default function AuthProvider({ children }) {
   };
 
   useEffect(() => {
-    getUser(); // 페이지 새로고침 시 사용자 정보 재확인
+    // 새로고침 시 accessToken 재발급 시도 → 유저 정보 fetch
+    (async () => {
+      const newAccessToken = await refreshAccessToken();
+      if (newAccessToken) {
+        setAccessToken(newAccessToken);
+        await getUser(newAccessToken);
+      }
+    })();
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, register, updateUser }}>
+    <AuthContext.Provider
+      value={{ user, accessToken, login, logout, register, updateUser }}
+    >
       {children}
     </AuthContext.Provider>
   );

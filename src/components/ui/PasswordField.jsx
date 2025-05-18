@@ -39,7 +39,7 @@ export default function PasswordField({
 
   return (
     <div className="mb-6 relative w-full">
-      <label className="block mb-2 text-sm font-semibold text-gray-800">
+      <label className="block mb-2 text-base font-semibold text-gray-800">
         {label}
       </label>
       <input
@@ -48,12 +48,12 @@ export default function PasswordField({
         value={value}
         onChange={handleChange}
         onBlur={handleBlur}
-        className={`w-full px-4 py-3 pr-10 rounded-xl bg-gray-100 placeholder:text-gray-400 focus:outline-blue-400 ${
+        className={`w-full px-5 py-3 pr-10 rounded-xl bg-gray-100 placeholder:text-gray-400 placeholder:text-sm focus:outline-blue-400 ${
           error ? "border border-red-500" : ""
         }`}
       />
       <div
-        className="absolute right-4 top-10 cursor-pointer"
+        className="absolute right-4 top-11.5 cursor-pointer"
         onClick={() => setShow((prev) => !prev)}
       >
         <Image
@@ -63,7 +63,11 @@ export default function PasswordField({
           height={20}
         />
       </div>
-      {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
+      {error && (
+        <p className="text-xs text-red-500 font-semibold mt-2 px-3.5">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

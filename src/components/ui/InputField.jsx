@@ -38,7 +38,7 @@ export default function InputField({
 
   return (
     <div className="mb-4 w-full">
-      <label className="block mb-2 text-sm font-semibold text-gray-800">
+      <label className="block mb-2 text-base font-semibold text-gray-800">
         {label}
       </label>
       <input
@@ -47,11 +47,15 @@ export default function InputField({
         value={value}
         onChange={handleChange}
         onBlur={handleBlur}
-        className={`w-full px-4 py-3 rounded-xl focus:outline-blue-400 bg-gray-100 placeholder:text-gray-400 ${
+        className={`w-full px-5 py-3 rounded-xl focus:outline-blue-400 bg-gray-100 placeholder:text-gray-400 placeholder:text-sm ${
           error ? "border border-red-500" : ""
         }`}
       />
-      {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
+      {error && (
+        <p className="text-xs text-red-500 font-semibold mt-2 px-3.5">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

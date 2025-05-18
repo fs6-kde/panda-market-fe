@@ -12,6 +12,7 @@ import { getProductComments } from "@/lib/api/getProductComments";
 import { postProductComment } from "@/lib/api/postProductComment";
 import Menubar from "@/components/ui/Menubar";
 import FavoriteButton from "@/components/ui/FavoriteButton";
+import { deleteProduct } from "@/lib/api/deleteProduct";
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -43,8 +44,8 @@ export default function ProductDetailPage() {
     async function fetchData() {
       try {
         const [productData, commentsData] = await Promise.all([
-          getProduct(id),
-          getProductComments(id),
+          getProduct(Number(id)),
+          getProductComments(Number(id)),
         ]);
         setProduct(productData);
         setComments(commentsData.list);
@@ -64,6 +65,25 @@ export default function ProductDetailPage() {
     fetchData();
   }, [id]);
 
+  // 삭제 핸들러 함수
+  const handleDeleteProduct = async () => {
+    const confirmDelete = confirm("정말 이 상품을 삭제하시겠습니까?");
+    if (!confirmDelete) return;
+
+    try {
+      const res = await deleteProduct(product.id);
+      alert("상품이 삭제되었습니다");
+      router.push("/market");
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  // 수정 핸들러 함수
+  const handleEdit = () => {
+    router.push(`/market/${product.id}/edit`);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -81,61 +101,86 @@ export default function ProductDetailPage() {
       {/* 상단 상품 정보 */}
       <div className="flex flex-col lg:flex-row gap-10 mb-2">
         {/* 왼쪽 상품 이미지 */}
-        <div className="flex-shrink-0 w-[386px] h-[386px] overflow-hidden rounded-2xl bg-gray-100">
-          <Image
-            src={product.images[0] || test}
+        <div className="flex-shrink-0 w-[436px] h-[436px] overflow-hidden rounded-2xl bg-gray-100">
+          <img
+            src={
+              product.images?.[0]
+                ? `http://localhost:3000${product.images[0]}`
+                : test.src
+            }
             alt={product.name}
-            width={286}
-            height={386}
+            width={336}
+            height={436}
             className="object-cover w-full h-full"
           />
         </div>
 
         {/* 오른쪽 상품 설명 */}
-        <div className="flex flex-col flex-1 relative">
-          {/* 메뉴 아이콘 */}
-          <div className="absolute top-2 right-0">
-            <Menubar
-              onEdit={() => console.log("상품 수정")}
-              onDelete={() => console.log("상품 삭제")}
-            />
-          </div>
-          {/* 상품 제목, 가격, 소개, 태그 쭉 나오는 부분 */}
-          <h1 className="text-2xl font-bold text-gray-900">{product.name}</h1>
-          <p className="text-3xl font-bold text-gray-800 mt-2">
-            {product.price.toLocaleString()}원
-          </p>
-
-          <div className="border-t border-gray-300 my-6" />
-
-          <h2 className="text-lg font-semibold mb-2">상품 소개</h2>
-          <p className="text-gray-700 whitespace-pre-line">
-            {product.description}
-          </p>
-
-          <h2 className="text-lg font-semibold mt-6 mb-2">상품 태그</h2>
-          <div className="flex flex-wrap gap-2">
-            {product.tags.map((tag, i) => (
-              <span
-                key={i}
-                className="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-600"
-              >
-                #{tag}
-              </span>
-            ))}
-          </div>
-
-          {/* 작성자 + 좋아요 영역 (항상 이미지 하단에 고정) */}
-          <div className="absolute bottom-0 right-1.5 flex items-center justify-between w-full mt-6">
-            <div className="flex items-center gap-2 text-gray-500 text-sm">
-              <Image src={userIcon} alt="User" width={24} height={24} />
-              <span>총명한 판다</span>
-              <span className="text-xs">
-                {new Date(product.createdAt).toLocaleDateString("ko-KR")}
-              </span>
+        <div className="flex flex-col flex-1 justify-between min-h-[386px]">
+          {/* 상단: 메뉴 + 제목 + 설명 + 태그 */}
+          <div className="relative">
+            {/* 메뉴 아이콘 */}
+            <div className="absolute top-2 right-0">
+              <Menubar onEdit={handleEdit} onDelete={handleDeleteProduct} />
             </div>
 
-            <FavoriteButton product={product} />
+            <h1 className="text-xl font-semibold text-gray-800">
+              {product.name}
+            </h1>
+            <p className="text-4xl font-bold text-gray-800 mt-4">
+              {product.price.toLocaleString()}원
+            </p>
+
+            <div className="border-t border-gray-300 my-6" />
+
+            <h2 className="text-sm text-gray-600 font-semibold mb-3">
+              상품 소개
+            </h2>
+            <p className="text-gray-600 whitespace-pre-line text-sm min-h-[90px]">
+              {product.description}
+            </p>
+
+            <h2 className="text-sm text-gray-600 font-semibold mt-5 mb-2">
+              상품 태그
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {product.tags.map((tag, i) => (
+                <span
+                  key={i}
+                  className="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-600"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* 하단: 작성자 + 좋아요 */}
+          <div className="flex items-center justify-between mt-10">
+            {/* 작성자 영역 */}
+            <div className="flex items-center gap-3 text-gray-500 text-sm">
+              <Image
+                src={userIcon}
+                alt="User"
+                width={40}
+                height={40}
+                className="rounded-full object-cover"
+              />
+              <div className="flex flex-col justify-center gap-2">
+                <span className="text-xs text-gray-700 font-medium">
+                  {product.ownerNickname}
+                </span>
+                <span className="text-xs text-gray-400">
+                  {new Date(product.createdAt).toLocaleDateString("ko-KR")}
+                </span>
+              </div>
+            </div>
+
+            {/* 좋아요 영역 + 세로선 포함 */}
+            <div className="flex items-center gap-4">
+              <div className="w-px h-9 bg-gray-200" />
+              <FavoriteButton product={product} />
+            </div>
           </div>
         </div>
       </div>
@@ -212,7 +257,7 @@ export default function ProductDetailPage() {
                     className="rounded-full object-cover"
                   />
                   <span className="text-sm text-gray-600">
-                    {comment.writer.nickname}
+                    {comment.writer.nickName}
                   </span>
                   <span className="text-xs text-gray-400">
                     {new Date(comment.createdAt).toLocaleDateString("ko-KR")}
