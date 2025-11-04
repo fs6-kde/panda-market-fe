@@ -1,11 +1,8 @@
+import { tokenFetch } from "./fetchClient";
+
 export async function deleteArticle(id) {
-  const res = await fetch(`http://localhost:3000/articles/${id}`, {
+  return await tokenFetch(`/articles/${id}`, undefined, {
     method: "DELETE",
+    credentials: "include",
   });
-
-  if (!res.ok) {
-    throw new Error("게시글 삭제 실패");
-  }
-
-  return res.json(); // 삭제 성공 시 응답 객체
 }

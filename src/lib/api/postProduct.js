@@ -1,27 +1,40 @@
+import { tokenFetch } from "./fetchClient";
+
 export async function postProduct(productData) {
-  const formData = new FormData();
+  // 1: 이미지 업로드
+  const uploadedUrls = await Promise.all(
+    productData.images.map(async (file) => {
+      const formData = new FormData();
+      formData.append("images", file); // 'image' 필드명은 서버와 일치
 
-  // 문자열 필드 추가
-  formData.append("name", productData.name);
-  formData.append("description", productData.description);
-  formData.append("price", productData.price);
-  formData.append("tags", JSON.stringify(productData.tags)); // 배열은 문자열로 변환
+      // 이 부분 서버쪽 보면서 알아보기
+      const uploadRes = await fetch("http://localhost:3000/api/upload", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
 
-  // 이미지 파일들 추가
-  productData.images.forEach((file) => {
-    formData.append("images", file);
-  });
+      if (!uploadRes.ok) {
+        const error = await uploadRes.json().catch(() => ({}));
+        throw new Error(error.message || "이미지 업로드 실패");
+      }
 
-  const res = await fetch("http://localhost:3000/products", {
+      const { url } = await uploadRes.json();
+      return url;
+    })
+  );
+
+  // 2: 상품 등록
+  const payload = {
+    name: productData.name,
+    description: productData.description,
+    price: productData.price,
+    tags: productData.tags,
+    images: uploadedUrls,
+  };
+
+  return await tokenFetch("/products", undefined, {
     method: "POST",
-    body: formData,
-    credentials: "include", // 쿠키 기반 인증을 위해
+    body: JSON.stringify(payload),
   });
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || "상품 등록 실패");
-  }
-
-  return res.json(); // 등록된 상품 객체 반환
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import Image from "next/image";
 import plusIcon from "@/assests/plus.svg";
 import closeIcon from "@/assests/close.svg";
@@ -22,18 +22,34 @@ export default function ProductRegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
+  // 같은 이미지 삭제 후 재등록 시, 파일 인풋을 초기화하기 위한 ref
+  const fileInputRef = useRef(null);
+
   const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+
+    const urls = files.map((f) => URL.createObjectURL(f));
+
     setImages((prev) => [...prev, ...files]);
-    setPreviews((prev) => [
-      ...prev,
-      ...files.map((f) => URL.createObjectURL(f)),
-    ]);
+    setPreviews((prev) => [...prev, ...urls]);
+
+    // 같은 파일을 다시 선택해도 change가 발생하도록 값을 비워준다
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleRemoveImage = (index) => {
+    // 미리보기 URL 메모리 해제
+    const url = previews[index];
+    if (url?.startsWith("blob:")) {
+      URL.revokeObjectURL(url);
+    }
+
     setImages((prev) => prev.filter((_, i) => i !== index));
     setPreviews((prev) => prev.filter((_, i) => i !== index));
+
+    // 삭제 후에도 동일 파일을 다시 선택할 수 있도록 인풋 초기화
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleTagKeyDown = (e) => {
@@ -49,7 +65,7 @@ export default function ProductRegisterPage() {
         setTagError("이미 등록된 태그입니다");
         return;
       }
-      setTags([...tags, trimmed]);
+      setTags((prev) => [...prev, trimmed]);
       setTagInput("");
       setTagError("");
     }
@@ -76,14 +92,19 @@ export default function ProductRegisterPage() {
         images,
       });
 
+      // 미리보기 blob URL들 메모리 해제
+      previews.forEach((u) => u.startsWith("blob:") && URL.revokeObjectURL(u));
+
       alert("상품이 등록되었습니다.");
       router.push("/market");
     } catch (err) {
-      alert("상품 등록에 실패했습니다: " + err.message);
+      alert("상품 등록에 실패했습니다: " + err?.message ?? "");
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const disabled = !name.trim() || !price.trim() || isSubmitting;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-20">
@@ -92,12 +113,12 @@ export default function ProductRegisterPage() {
         <h1 className="text-lg font-bold">상품 등록하기</h1>
         <button
           className={`${
-            isSubmitting
+            disabled
               ? "bg-gray-300 cursor-not-allowed"
-              : "bg-blue-500 hover:bg-blue-600"
+              : "bg-blue-500 hover:bg-blue-600 transition-all duration-200 ease-in-out"
           } text-white text-xs px-5 py-2 rounded-md`}
           onClick={handleSubmit}
-          disabled={isSubmitting}
+          disabled={disabled}
         >
           등록
         </button>
@@ -114,6 +135,7 @@ export default function ProductRegisterPage() {
             <Image src={plusIcon} alt="이미지 등록" width={35} height={35} />
             <p className="text-xs text-gray-400 mt-2">이미지 등록</p>
             <input
+              ref={fileInputRef}
               type="file"
               accept="image/*"
               multiple
@@ -128,9 +150,8 @@ export default function ProductRegisterPage() {
               key={i}
               className="relative w-[230px] h-[240px] rounded-lg overflow-hidden group"
             >
-              {/* 이미지 (hover 시 어두워짐) */}
               <img
-                src={previews[i]}
+                src={src}
                 alt={`preview-${i}`}
                 className="w-full h-full object-cover"
               />
@@ -216,7 +237,7 @@ export default function ProductRegisterPage() {
               key={i}
               className="flex items-center bg-gray-200 text-sm text-gray-700 px-3 py-1 rounded-full"
             >
-              #{t}
+              # {t}
               <button onClick={() => handleTagDelete(i)} className="ml-2">
                 <Image src={closeIcon} alt="삭제" width={12} height={12} />
               </button>

@@ -1,3 +1,6 @@
+import { defaultFetch, tokenFetch } from "./fetchClient";
+
+// 상품 목록 조회
 export async function getProducts({
   page = 1,
   pageSize = 10,
@@ -9,24 +12,14 @@ export async function getProducts({
     orderBy,
   });
 
-  const res = await fetch(`http://localhost:3000/products?${query.toString()}`);
-
-  if (!res.ok) {
-    throw new Error("상품 목록을 불러오지 못했습니다.");
-  }
-
-  return res.json();
+  return await defaultFetch(`/products?${query.toString()}`, {
+    method: "GET",
+  });
 }
 
+// 상품 상세 조회
 export async function getProduct(id) {
-  const res = await fetch(`http://localhost:3000/products/${id}`, {
-    cache: "no-store",
-    credentials: "include",
+  return await tokenFetch(`/products/${id}`, {
+    method: "GET",
   });
-
-  if (!res.ok) {
-    throw new Error("해당 상품을 불러오지 못했습니다.");
-  }
-
-  return res.json();
 }

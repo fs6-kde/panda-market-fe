@@ -9,20 +9,34 @@ import { useParams, useRouter } from "next/navigation";
 import { getProduct } from "@/lib/api/getProducts";
 import { patchProduct } from "@/lib/api/patchProduct";
 
+const S3_ORIGIN = process.env.NEXT_PUBLIC_S3_ORIGIN ?? "";
+const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL ?? "";
+
+// 키/절대URL/백엔드 정적경로 모두 커버하는 URL 변환
+const toImageUrl = (key) => {
+  if (!key) return "";
+  if (/^https?:\/\//i.test(key)) return key; // 절대 URL
+  if (key.startsWith("/")) return `${API_ORIGIN}${key}`; // /uploads/.. 등
+  return `${S3_ORIGIN}/${key}`; // S3 key
+};
+
 export default function ProductEditPage() {
   const { id } = useParams();
   const router = useRouter();
 
   const [product, setProduct] = useState(null);
+
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState([]);
   const [tagError, setTagError] = useState(false);
-  const [images, setImages] = useState([]);
-  const [previews, setPreviews] = useState([]);
+
   const [existingImages, setExistingImages] = useState([]);
+  const [newImageKeys, setNewImageKeys] = useState([]);
+  const [previews, setPreviews] = useState([]);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 기존 상품 정보 불러오기
@@ -34,13 +48,15 @@ export default function ProductEditPage() {
         const data = await getProduct(Number(id));
         setProduct(data);
         setName(data.name || "");
-        setPrice(data.price || "");
+        setPrice(data.price?.toString() || "");
         setDescription(data.description || "");
         setTags(data.tags || []);
 
-        // 기존 이미지 경로 저장
-        setExistingImages(data.images || []);
-        setPreviews(data.images.map((url) => `http://localhost:3000${url}`));
+        // 기존 이미지: 서버에는 받은 값 그대로 보내고,
+        // 미리보기는 절대 URL로 변환해서 렌더
+        const exist = data.images ?? [];
+        setExistingImages(exist);
+        setPreviews(exist.map(toImageUrl).filter(Boolean));
       } catch (err) {
         alert("상품 정보를 불러오지 못했습니다.");
         router.push("/market");
@@ -77,33 +93,51 @@ export default function ProductEditPage() {
   };
 
   // 이미지 등록 삭제 핸들러
-  const handleDeleteImage = (index, isExisting) => {
-    if (isExisting) {
-      const updated = [...existingImages];
-      updated.splice(index, 1);
-      setExistingImages(updated);
-    } else {
-      const imageIndex = index - existingImages.length;
-      const updatedFiles = [...images];
-      updatedFiles.splice(imageIndex, 1);
-      setImages(updatedFiles);
-    }
+  const handleDeleteImage = (index) => {
+    setPreviews((arr) => arr.filter((_, i) => i !== index));
 
-    const updatedPreviews = [...previews];
-    updatedPreviews.splice(index, 1);
-    setPreviews(updatedPreviews);
+    // existingImages 먼저 소진
+    if (index < existingImages.length) {
+      setExistingImages((arr) => arr.filter((_, i) => i !== index));
+    } else {
+      const newIdx = index - existingImages.length;
+      setNewImageKeys((arr) => arr.filter((_, i) => i !== newIdx));
+    }
   };
 
   // 이미지 업로드 핸들러
-  const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
-    const filePreviews = files.map((file) => URL.createObjectURL(file));
+  const handleImageChange = async (e) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
 
-    setImages(files);
-    setPreviews([
-      ...existingImages.map((url) => `http://localhost:3000${url}`),
-      ...filePreviews,
-    ]);
+    try {
+      const results = await Promise.all(
+        files.map(async (file) => {
+          const fd = new FormData();
+          // 서버 미들웨어: upload.single("images") 이므로 "images" 사용
+          fd.append("images", file);
+
+          const res = await fetch(`${API_ORIGIN}/api/upload`, {
+            method: "POST",
+            body: fd,
+            credentials: "include",
+          });
+          if (!res.ok) throw new Error("이미지 업로드 실패");
+
+          // 서버 응답
+          return res.json();
+        })
+      );
+
+      // 서버 저장용은 key, 미리보기는 url
+      setNewImageKeys((prev) => [...prev, ...results.map((r) => r.key)]);
+      setPreviews((prev) => [...prev, ...results.map((r) => r.url)]);
+    } catch (err) {
+      alert(err?.message ?? "이미지 업로드 중 오류가 발생했습니다.");
+    } finally {
+      // 같은 파일을 다시 올릴 수 있도록 초기화
+      e.target.value = "";
+    }
   };
 
   // 수정 등록
@@ -119,18 +153,19 @@ export default function ProductEditPage() {
       setIsSubmitting(true);
 
       await patchProduct(id, {
-        name,
+        name: name.trim(),
         price: Number(price),
-        description,
+        description: description ?? "",
         tags,
-        images,
-        existingImages,
+        // 서버에서 키/절대URL 둘 다 수용 가능하도록 설계한 것을 그대로 전달
+        existingImages, // 남겨둘 기존 이미지들
+        images: newImageKeys, // 새로 추가된 이미지들(key)
       });
 
       alert("상품이 수정되었습니다.");
       router.push(`/market/${id}`);
     } catch (err) {
-      alert("수정에 실패했습니다: " + err.message);
+      alert("수정에 실패했습니다: " + err.message ?? "");
     } finally {
       setIsSubmitting(false);
     }
@@ -179,23 +214,18 @@ export default function ProductEditPage() {
               key={i}
               className="relative w-[230px] h-[240px] rounded-lg overflow-hidden group"
             >
-              <img
+              <Image
                 src={src}
                 alt={`preview-${i}`}
+                fill
                 className="w-full h-full object-cover"
               />
               <button
                 type="button"
-                onClick={() => handleDeleteImage(i, i < existingImages.length)}
+                onClick={() => handleDeleteImage(i)}
                 className="absolute top-1 right-1 rounded-full transition duration-300 hover:brightness-75"
               >
-                <Image
-                  src={closeIcon}
-                  alt="삭제"
-                  width={19}
-                  height={19}
-                  className="transition duration-300"
-                />
+                <Image src={closeIcon} alt="삭제" width={19} height={19} />
               </button>
             </div>
           ))}
@@ -258,13 +288,14 @@ export default function ProductEditPage() {
           </p>
         )}
 
+        {/* 태그 미리보기 */}
         <div className="flex flex-wrap gap-2 mt-4">
           {tags.map((tag, i) => (
             <span
               key={i}
               className="flex items-center bg-gray-200 text-sm text-gray-700 rounded-full px-3 py-1"
             >
-              #{tag}
+              # {tag}
               <button onClick={() => handleRemoveTag(i)} className="ml-2">
                 <Image src={closeIcon} alt="태그 삭제" width={12} height={12} />
               </button>

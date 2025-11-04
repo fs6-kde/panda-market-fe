@@ -1,16 +1,9 @@
+import { tokenFetch } from "./fetchClient";
+
+// 게시글 댓글 수정
 export async function patchComment(commentId, content) {
-  const res = await fetch(`http://localhost:3000/comments/${commentId}`, {
+  return await tokenFetch(`/article/comments/${commentId}`, undefined, {
     method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify({ content }),
   });
-
-  if (!res.ok) {
-    throw new Error("댓글 수정 실패");
-  }
-
-  const data = await res.json();
-  return data;
 }

@@ -1,10 +1,10 @@
 import { tokenFetch } from "./fetchClient";
 
 export const userService = {
-  getMe: (accessToken) => tokenFetch("/users/me", accessToken),
+  getMe: () => tokenFetch("/users/me"),
 
-  updateMe: (accessToken, userData) =>
-    tokenFetch("/users/me", accessToken, {
+  updateMe: (userData) =>
+    tokenFetch("/users/me", undefined, {
       method: "PATCH",
       body: JSON.stringify(userData),
     }),

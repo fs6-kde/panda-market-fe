@@ -18,7 +18,7 @@ export default function WritePage() {
   const router = useRouter();
 
   const searchParams = useSearchParams();
-  const id = searchParams.get("id"); // 수정할 게시글 id 찾기
+  const id = searchParams.get("id"); // 수정할 게시글 id 찾기 (수정 모드 여부로 사용)
 
   // 기존 데이터 불러오기
   useEffect(() => {
@@ -48,6 +48,7 @@ export default function WritePage() {
       if (id) {
         // 수정하기
         await patchArticle(id, { title, content });
+        alert("성공적으로 수정되었습니다.");
         router.push(`/article/${id}`);
       } else {
         // 등록하기
@@ -55,6 +56,7 @@ export default function WritePage() {
           title,
           content,
         });
+        alert("성공적으로 등록되었습니다.");
         router.push(`/article/${created.id}`);
       }
     } catch (error) {
@@ -69,7 +71,9 @@ export default function WritePage() {
     <main className="flex flex-col items-center justify-start mt-20 min-h-screen px-4">
       <div className="w-full max-w-3xl">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-lg font-semibold">게시글 쓰기</h1>
+          <h1 className="text-lg font-semibold">
+            게시글 {id ? "수정" : "쓰기"}
+          </h1>
           <button
             className={`px-4 py-2 rounded-md text-sm font-semibold text-white ${
               isButtonDisabled
@@ -85,7 +89,7 @@ export default function WritePage() {
 
         <form className="space-y-6">
           <div>
-            <label className="block text-sm font-semibold mb-2">*제목</label>
+            <label className="block text-sm font-semibold mb-2">* 제목</label>
             <input
               type="text"
               placeholder={titlePlaceholder}
@@ -98,7 +102,7 @@ export default function WritePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold mb-2">*내용</label>
+            <label className="block text-sm font-semibold mb-2">* 내용</label>
             <textarea
               rows="10"
               placeholder={contentPlaceholder}

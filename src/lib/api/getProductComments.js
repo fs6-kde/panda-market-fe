@@ -1,15 +1,10 @@
+import { tokenFetch } from "./fetchClient";
+
+// 리밋, 커서 쿼리 스트링 있으나 프론트엔 설정 안해놓음
 export async function getProductComments(productId) {
-  const res = await fetch(
-    `http://localhost:3000/products/${productId}/comments?limit=5`,
-    {
-      cache: "no-store",
-      credentials: "include",
-    }
-  );
-
-  if (!res.ok) {
-    throw new Error("댓글 조회 실패");
-  }
-
-  return res.json();
+  return await tokenFetch(`/product/${productId}/comments`, {
+    method: "GET",
+    credentials: "include",
+    cache: "no-store",
+  });
 }

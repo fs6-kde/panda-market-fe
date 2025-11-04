@@ -1,4 +1,3 @@
-// 계산하는 건 모르겠어서 지피티 썼습니다..
 export function formatTimeAgo(dateString) {
   const now = new Date();
   const past = new Date(dateString);

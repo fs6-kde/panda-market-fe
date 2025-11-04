@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { authService } from "@/lib/api/authService";
 import { userService } from "@/lib/api/userService";
+import { setAccessToken as setGlobalAccessToken } from "@/lib/api/fetchClient";
 
 const AuthContext = createContext({
   login: () => {},
@@ -10,7 +11,7 @@ const AuthContext = createContext({
   register: () => {},
   updateUser: () => {},
   user: null,
-  accessToken: null,
+  isLoading: true,
 });
 
 export const useAuth = () => {
@@ -23,11 +24,10 @@ export const useAuth = () => {
 
 export default function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [accessToken, setAccessToken] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const login = async (email, password) => {
-    const { accessToken, user } = await authService.login(email, password);
-    setAccessToken(accessToken);
+    const { user } = await authService.login(email, password);
     setUser(user);
   };
 
@@ -36,14 +36,23 @@ export default function AuthProvider({ children }) {
     await login(email, password); // 자동 로그인
   };
 
-  const logout = () => {
-    setAccessToken(null);
-    setUser(null);
+  const logout = async () => {
+    try {
+      const res = await authService.logout(); // /logout POST + refresh 쿠키 삭제 + DB refreshToken null
+      return res?.message;
+    } catch (e) {
+      // 실패해도 클라이언트 상태는 반드시 정리
+      console.warn("logout request failed (ignored):", e);
+      return undefined;
+    } finally {
+      setUser(null);
+      setGlobalAccessToken(null);
+    }
   };
 
-  const getUser = async (token) => {
+  const getUser = async () => {
     try {
-      const userData = await userService.getMe(token);
+      const userData = await userService.getMe();
       setUser(userData);
     } catch (error) {
       console.error("사용자 정보를 가져오는데 실패했습니다:", error);
@@ -70,29 +79,39 @@ export default function AuthProvider({ children }) {
     }
   };
 
+  useEffect(() => {
+    // 새로고침 시 accessToken 재발급 시도 → 유저 정보 fetch
+    (async () => {
+      const newAccessToken = await refreshAccessToken();
+      if (newAccessToken) {
+        setGlobalAccessToken(newAccessToken);
+        await getUser();
+      } else {
+        console.warn(" [Auth] No token received from refresh.");
+      }
+      setIsLoading(false);
+    })();
+  }, []);
+
   const updateUser = async (updated) => {
     try {
-      const updatedUser = await userService.updateMe(accessToken, updated);
+      const updatedUser = await userService.updateMe(updated);
       setUser(updatedUser);
     } catch (error) {
       console.error("사용자 정보 업데이트 실패:", error);
     }
   };
 
-  useEffect(() => {
-    // 새로고침 시 accessToken 재발급 시도 → 유저 정보 fetch
-    (async () => {
-      const newAccessToken = await refreshAccessToken();
-      if (newAccessToken) {
-        setAccessToken(newAccessToken);
-        await getUser(newAccessToken);
-      }
-    })();
-  }, []);
-
   return (
     <AuthContext.Provider
-      value={{ user, accessToken, login, logout, register, updateUser }}
+      value={{
+        user,
+        login,
+        logout,
+        register,
+        updateUser,
+        isLoading,
+      }}
     >
       {children}
     </AuthContext.Provider>

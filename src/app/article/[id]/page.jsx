@@ -1,13 +1,12 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Heart } from "lucide-react";
 import arrowLeftIcon from "@/assests/arrow_back.svg";
 import userIcon from "@/assests/user.svg";
 import emptyCommentIcon from "@/assests/empty-comment.svg";
-import menuIcon from "@/assests/menu.svg";
 import { getArticle } from "@/lib/api/getArticles";
 import { useParams } from "next/navigation";
 import { useRouter } from "next/navigation";
@@ -17,98 +16,163 @@ import { getComments } from "@/lib/api/getComments";
 import { formatTimeAgo } from "@/lib/utils/timesAgo";
 import { patchComment } from "@/lib/api/patchComment";
 import { deleteComment } from "@/lib/api/deleteComment";
+import { useAuth } from "@/providers/AuthProvider";
+import Menubar from "@/components/ui/Menubar";
 
-export default function ArticlePage({ articleId }) {
-  const [comment, setComment] = useState("");
-  const [placeholder, setPlaceholder] = useState("댓글을 입력해주세요.");
-  const [menuOpen, setMenuOpen] = useState(false);
+export default function ArticlePage() {
   const { id } = useParams();
-  const [article, setArticle] = useState(null);
-  const [openMenuId, setOpenMenuId] = useState(null);
+  const router = useRouter();
+  const { user } = useAuth();
 
-  // 메뉴 ref 분리
-  const articleMenuRef = useRef(null);
-  const commentMenuRefs = useRef({});
+  const [article, setArticle] = useState(null);
 
   // 댓글 상태
   const [comments, setComments] = useState([]);
   const [isLoadingComments, setIsLoadingComments] = useState(true);
+  // 댓글 등록 중
+  const [isPostingComment, setIsPostingComment] = useState(false);
 
-  // 수정 중인 댓글, 입력값 관리
+  // 댓글 입력 & 수정 상태
+  const [comment, setComment] = useState("");
+  const [placeholder, setPlaceholder] = useState("댓글을 입력해주세요.");
+  const [openMenuId, setOpenMenuId] = useState(null);
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editedContent, setEditedContent] = useState("");
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
-  const router = useRouter();
-
+  // 게시글 상세 조회
   useEffect(() => {
-    const fetchArticle = async () => {
+    if (!id) return;
+    (async () => {
       try {
         const data = await getArticle(id);
         setArticle(data);
       } catch (error) {
         console.error("게시글 불러오기 실패:", error);
       }
-    };
-
-    if (id) fetchArticle();
+    })();
   }, [id]);
 
-  // 댓글 불러오기
+  // 댓글 불러오기 (id 기준)
   useEffect(() => {
-    const fetchComments = async () => {
+    if (!id) return;
+    (async () => {
+      setIsLoadingComments(true);
       try {
-        const data = await getComments(id);
-        setComments(data);
+        // 필요 시 limit 값 조정
+        const res = await getComments(id, { limit: 50 });
+        // 서버에서 최신순(desc)로 내려오므로 그대로 사용
+        setComments(res.list ?? []);
       } catch (err) {
         console.error("댓글 조회 실패:", err);
       } finally {
         setIsLoadingComments(false);
       }
-    };
+    })();
+  }, [id]);
 
-    fetchComments();
-  }, [articleId]);
+  // // 바깥 클릭 시 메뉴 닫기
+  // useEffect(() => {
+  //   const handleClickOutside = (e) => {
+  //     if (
+  //       articleMenuRef.current &&
+  //       !articleMenuRef.current.contains(e.target)
+  //     ) {
+  //       setMenuOpen(false);
+  //     }
+  //     const isInsideAnyCommentMenu = Object.values(
+  //       commentMenuRefs.current
+  //     ).some((ref) => ref instanceof HTMLElement && ref.contains(e.target));
+  //     if (!isInsideAnyCommentMenu) setOpenMenuId(null);
+  //   };
+  //   document.addEventListener("mousedown", handleClickOutside);
+  //   return () => document.removeEventListener("mousedown", handleClickOutside);
+  // }, []);
 
   // 댓글 등록 핸들러
   const handleCommentSubmit = async () => {
-    if (!comment.trim()) return;
+    if (!comment.trim() || isPostingComment) return;
 
     try {
-      const newComment = await postComment(id, comment);
-      setComments((prev) => [...prev, newComment]); // 목록에 추가
+      setIsPostingComment(true);
+      const newComment = await postComment(id, comment.trim());
+      // 최신순이므로 맨 앞에 추가
+      setComments((prev) => [newComment, ...prev]);
       setComment(""); // 입력칸 초기화
     } catch (err) {
       console.error("댓글 등록 실패:", err);
       alert("댓글 등록에 실패했습니다.");
+    } finally {
+      setIsPostingComment(false);
     }
   };
 
-  const toggleMenu = (id) => {
-    setOpenMenuId((prev) => (prev === id ? null : id));
+  // 상단: 게시글 수정/삭제 핸들러
+  const handleEditArticle = () => {
+    router.push(`/writes?id=${id}`);
   };
 
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      // 게시글 메뉴 영역 밖 클릭
-      if (
-        articleMenuRef.current &&
-        !articleMenuRef.current.contains(e.target)
-      ) {
-        setMenuOpen(false);
+  const handleDeleteArticle = () => {
+    // Menubar가 먼저 닫히도록 다음 태스크로 confirm 실행
+    setTimeout(async () => {
+      const ok = window.confirm("정말 삭제하시겠습니까?");
+      if (!ok) return;
+      try {
+        const result = await deleteArticle(id);
+        alert(result?.message ?? "삭제되었습니다.");
+        router.push("/article");
+      } catch (err) {
+        console.error("삭제 실패:", err);
+        alert("게시글 삭제에 실패했습니다.");
       }
+    }, 0);
+  };
 
-      // 댓글 메뉴 중 하나라도 내부 클릭이면 유지
-      const isInsideAnyCommentMenu = Object.values(
-        commentMenuRefs.current
-      ).some((ref) => ref instanceof HTMLElement && ref.contains(e.target));
-      if (!isInsideAnyCommentMenu) {
-        setOpenMenuId(null);
+  // 댓글: 수정 열기/취소/저장
+  const startEdit = (c) => {
+    setEditingCommentId(c.id);
+    setEditedContent(c.content);
+  };
+
+  const cancelEdit = () => {
+    setEditingCommentId(null);
+    setEditedContent("");
+  };
+
+  const saveEdit = async (commentId) => {
+    if (!editedContent.trim()) return;
+    try {
+      setIsSavingEdit(true);
+      const updated = await patchComment(commentId, editedContent.trim());
+      setComments((prev) =>
+        prev.map((item) =>
+          item.id === commentId ? { ...item, content: updated.content } : item
+        )
+      );
+      setEditingCommentId(null);
+      setEditedContent("");
+    } catch (err) {
+      alert("댓글 수정 실패");
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
+  // 댓글 삭제
+  const handleDeleteOneComment = (commentId) => {
+    // Menubar가 먼저 닫히도록 다음 태스크로 confirm 실행
+    setTimeout(async () => {
+      const ok = window.confirm("정말 삭제하시겠습니까?");
+      if (!ok) return;
+      try {
+        await deleteComment(commentId);
+        alert("삭제되었습니다.");
+        setComments((prev) => prev.filter((item) => item.id !== commentId));
+      } catch (err) {
+        alert("댓글 삭제 실패");
       }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    }, 0);
+  };
 
   if (!article)
     return (
@@ -116,6 +180,18 @@ export default function ArticlePage({ articleId }) {
         로딩 중...
       </p>
     );
+
+  // 권한 판별
+  // 서버 스키마에 따라 article.authorId 또는 article.author?.id 둘 다 대응
+  const articleAuthorId = article.authorId ?? article.author?.id;
+  const isArticleOwner = !!user && articleAuthorId === user.id;
+
+  // 좋아요 랜덤 임시값
+  const likeCount = 0;
+  const authorName = article?.author?.nickName ?? "총명한 판다";
+  const createdAtText = article?.createdAt
+    ? new Date(article.createdAt).toLocaleDateString("ko-KR")
+    : "";
 
   return (
     <main className="flex flex-col items-center justify-center min-h-screen px-4 py-12">
@@ -126,46 +202,15 @@ export default function ArticlePage({ articleId }) {
             <h1 className="text-lg font-semibold max-w-[90%]">
               {article.title}
             </h1>
-            <div className="relative" ref={articleMenuRef}>
-              <button onClick={() => setMenuOpen((prev) => !prev)}>
-                <Image src={menuIcon} alt="menu" width={3} height={3} />
-              </button>
-              {menuOpen && (
-                <div className="absolute right-0 mt-2 w-28 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 z-10">
-                  <button
-                    className="w-full px-4 py-2 hover:bg-gray-50 text-left"
-                    onClick={() => {
-                      router.push(`/writes?id=${id}`);
-                      setMenuOpen(false);
-                    }}
-                  >
-                    수정하기
-                  </button>
-                  <div className="border-t border-gray-200" />
-                  <button
-                    className="w-full px-4 py-2 hover:bg-gray-50 text-left"
-                    onClick={async () => {
-                      const confirmDelete = confirm("정말 삭제하시겠습니까?");
-                      if (!confirmDelete) return;
 
-                      try {
-                        await deleteArticle(id);
-                        alert("해당 게시글이 삭제되었습니다.");
-                        router.push("/article");
-                      } catch (err) {
-                        console.error("삭제 실패:", err);
-                        alert("게시글 삭제에 실패했습니다.");
-                      } finally {
-                        setMenuOpen(false);
-                      }
-                    }}
-                  >
-                    삭제하기
-                  </button>
-                </div>
-              )}
-            </div>
+            <Menubar
+              canManage={isArticleOwner}
+              onEdit={handleEditArticle}
+              onDelete={handleDeleteArticle}
+              onReport={() => alert("신고 접수 화면으로 이동합니다.")}
+            />
           </div>
+
           <div className="flex items-center gap-4 text-sm text-gray-400">
             <div className="flex items-center gap-2">
               <Image
@@ -175,15 +220,13 @@ export default function ArticlePage({ articleId }) {
                 height={24}
                 className="rounded-full"
               />
-              총명한 판다
+              {authorName}
             </div>
-            <span>
-              {new Date(article.createdAt).toLocaleDateString("ko-KR")}
-            </span>
+            <span>{createdAtText}</span>
             <span className="text-2xl text-gray-200">|</span>
             <div className="flex items-center gap-1">
               <Heart className="w-6 h-6 text-gray-400" />
-              <span className="text-gray-600">0</span>
+              <span className="text-gray-600">{likeCount}</span>
             </div>
           </div>
         </div>
@@ -204,15 +247,15 @@ export default function ArticlePage({ articleId }) {
           ></textarea>
           <div className="flex justify-end mt-2">
             <button
-              disabled={comment.trim() === ""}
+              disabled={comment.trim() === "" || isPostingComment}
               onClick={handleCommentSubmit}
-              className={`px-4 py-1.5 rounded-md text-sm text-white ${
-                comment.trim() === ""
-                  ? "bg-gray-300 cursor-not-allowed"
-                  : "bg-blue-500 hover:bg-blue-600"
+              className={`px-3.5 py-1.5 rounded-md text-sm text-white ${
+                comment.trim() === "" || isPostingComment
+                  ? "bg-gray-600 opacity-50 cursor-not-allowed"
+                  : "bg-blue-500 hover:bg-blue-600 cursor-pointer transition-all duration-200 ease-in-out"
               }`}
             >
-              등록
+              {isPostingComment ? "등록 중..." : "등록"}
             </button>
           </div>
         </div>
@@ -238,154 +281,90 @@ export default function ArticlePage({ articleId }) {
           </div>
         ) : (
           <ul className="space-y-4 mt-8">
-            {comments
-              .slice()
-              .reverse()
-              .map((c) => {
-                const isEditing = editingCommentId === c.id;
-                const isMenuOpen = openMenuId === c.id;
+            {comments.map((c) => {
+              const isEditing = editingCommentId === c.id;
 
-                return (
-                  <li
-                    key={c.id}
-                    className="p-4 rounded-xl bg-[#f9fafb] shadow-sm flex flex-col justify-between"
-                  >
-                    {/* content + 메뉴바 */}
-                    {isEditing ? (
-                      <div className="mb-4">
-                        <textarea
-                          rows="3"
-                          value={editedContent}
-                          onChange={(e) => setEditedContent(e.target.value)}
-                          className="w-full bg-gray-100 border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
+              // 내가 쓴 댓글 판별 (userId 우선, 없으면 writer.id)
+              const commentAuthorId = c.userId ?? c.writer?.id;
+              const isMyComment = !!user && commentAuthorId === user.id;
+
+              return (
+                <li
+                  key={c.id}
+                  className="p-4 rounded-xl bg-[#f9fafb] shadow-sm flex flex-col justify-between"
+                >
+                  {/* content + 메뉴바 */}
+                  {isEditing ? (
+                    <div className="mb-4">
+                      <textarea
+                        rows="3"
+                        value={editedContent}
+                        onChange={(e) => setEditedContent(e.target.value)}
+                        className="w-full bg-gray-100 border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex justify-between mb-4">
+                      <div className="text-sm text-gray-800 ml-0.5">
+                        {c.content}
                       </div>
-                    ) : (
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="text-sm text-gray-800">{c.content}</div>
-                        <div
-                          className="relative"
-                          ref={(el) => {
-                            if (el) commentMenuRefs.current[c.id] = el;
-                          }}
-                        >
-                          <button onClick={() => setOpenMenuId(c.id)}>
-                            <Image
-                              src={menuIcon}
-                              alt="menu"
-                              width={3}
-                              height={3}
-                            />
-                          </button>
-                          {isMenuOpen && (
-                            <div className="absolute right-0 mt-2 w-28 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 z-10">
-                              <button
-                                className="w-full px-4 py-2 hover:bg-gray-50 text-left"
-                                onClick={() => {
-                                  setEditingCommentId(c.id);
-                                  setEditedContent(c.content);
-                                  setOpenMenuId(null);
-                                }}
-                              >
-                                수정하기
-                              </button>
-                              <div className="border-t border-gray-200" />
-                              {/* 삭제하기 */}
-                              <button
-                                className="w-full px-4 py-2 hover:bg-gray-50 text-left"
-                                onClick={async () => {
-                                  const confirmDelete =
-                                    confirm("정말 삭제하시겠습니까?");
-                                  if (!confirmDelete) return;
 
-                                  try {
-                                    await deleteComment(c.id);
-                                    alert("삭제되었습니다.");
-                                    setComments((prev) =>
-                                      prev.filter((item) => item.id !== c.id)
-                                    );
-                                  } catch (err) {
-                                    alert("댓글 삭제 실패");
-                                  } finally {
-                                    setOpenMenuId(null); // 메뉴 닫기
-                                  }
-                                }}
-                              >
-                                삭제하기
-                              </button>
-                            </div>
-                          )}
-                        </div>
+                      <Menubar
+                        canManage={isMyComment}
+                        onEdit={() => startEdit(c)}
+                        onDelete={() => handleDeleteOneComment(c.id)}
+                        onReport={() => alert("신고 접수 화면으로 이동합니다.")}
+                      />
+                    </div>
+                  )}
+
+                  {/* 유저 정보 + 버튼 */}
+                  <div className="flex justify-between items-center">
+                    <div className="flex gap-3 items-center">
+                      <Image
+                        src={userIcon}
+                        alt="user"
+                        width={30}
+                        height={30}
+                        className="rounded-full"
+                      />
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-xs text-gray-800">
+                          {c?.writer?.nickName ?? "똑똑한판다"}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {formatTimeAgo(c.createdAt)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* 수정할 때 나타나는 버튼 */}
+                    {isEditing && (
+                      <div className="flex gap-2">
+                        <button
+                          className="text-sm text-gray-500 hover:underline"
+                          onClick={cancelEdit}
+                          disabled={isSavingEdit}
+                        >
+                          취소
+                        </button>
+                        <button
+                          className={`text-sm px-3 py-1.5 rounded-md text-white ${
+                            !editedContent.trim() || isSavingEdit
+                              ? "bg-gray-400 cursor-not-allowed"
+                              : "bg-blue-500 hover:bg-blue-600"
+                          }`}
+                          disabled={!editedContent.trim() || isSavingEdit}
+                          onClick={() => saveEdit(c.id)}
+                        >
+                          {isSavingEdit ? "수정 중..." : "수정"}
+                        </button>
                       </div>
                     )}
-
-                    {/* 유저 정보 + 버튼 */}
-                    <div className="flex justify-between items-center">
-                      <div className="flex gap-3 items-center">
-                        <Image
-                          src={userIcon}
-                          alt="user"
-                          width={30}
-                          height={30}
-                          className="rounded-full"
-                        />
-                        <div className="flex flex-col">
-                          <span className="font-light text-xs text-gray-800">
-                            똑똑한판다
-                          </span>
-                          <span className="text-xs text-gray-400 mt-0.5">
-                            {formatTimeAgo(c.createdAt)}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* 수정할 때 나타나는 버튼 */}
-                      {isEditing && (
-                        <div className="flex gap-2">
-                          <button
-                            className="text-sm text-gray-500 hover:underline"
-                            onClick={() => {
-                              setEditingCommentId(null);
-                              setEditedContent("");
-                            }}
-                          >
-                            취소
-                          </button>
-                          <button
-                            className={`text-sm px-3 py-1.5 rounded-md text-white ${
-                              editedContent.trim()
-                                ? "bg-blue-500 hover:bg-blue-600"
-                                : "bg-gray-300 cursor-not-allowed"
-                            }`}
-                            disabled={!editedContent.trim()}
-                            onClick={async () => {
-                              try {
-                                const updated = await patchComment(
-                                  c.id,
-                                  editedContent.trim()
-                                );
-                                setComments((prev) =>
-                                  prev.map((item) =>
-                                    item.id === c.id
-                                      ? { ...item, content: updated.content }
-                                      : item
-                                  )
-                                );
-                                setEditingCommentId(null);
-                                setEditedContent("");
-                              } catch (err) {
-                                alert("댓글 수정 실패");
-                              }
-                            }}
-                          >
-                            수정완료
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
 

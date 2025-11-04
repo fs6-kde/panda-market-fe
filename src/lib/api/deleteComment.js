@@ -1,11 +1,8 @@
+import { tokenFetch } from "./fetchClient";
+
+// 게시글 댓글 삭제
 export async function deleteComment(commentId) {
-  const res = await fetch(`http://localhost:3000/comments/${commentId}`, {
+  return await tokenFetch(`/article/comments/${commentId}`, undefined, {
     method: "DELETE",
   });
-
-  if (!res.ok) {
-    throw new Error("댓글 삭제 실패");
-  }
-
-  return;
 }
