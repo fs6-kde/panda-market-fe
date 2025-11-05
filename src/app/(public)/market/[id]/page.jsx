@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getProduct } from "@/lib/api/getProducts";
 import Image from "next/image";
-import test from "../../../../public/test.svg";
+import test from "../../../../../public/test.svg";
 import userIcon from "@/assests/user.svg";
 import arrowLeftIcon from "@/assests/arrow_back.svg";
 import pandaQuestionImg from "@/assests/panda-question.svg";

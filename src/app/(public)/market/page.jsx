@@ -6,7 +6,7 @@ import SortDropdown from "@/components/ui/SortDropdown";
 import Pagination from "@/components/ui/Pagination";
 import { useEffect, useState } from "react";
 import { getProducts } from "@/lib/api/getProducts";
-import test from "../../../public/test.svg";
+import test from "../../../../public/test.svg";
 import { Heart } from "lucide-react";
 import Link from "next/link";
 

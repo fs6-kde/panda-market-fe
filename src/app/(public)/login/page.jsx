@@ -7,7 +7,7 @@ import PasswordField from "@/components/ui/PasswordField";
 import Button from "@/components/ui/Button";
 import OIDCGroup from "@/components/ui/OIDCGroup";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/providers/AuthProvider";
 import ErrorModal from "@/components/ui/ErrorModal";
 
@@ -19,31 +19,44 @@ export default function Login() {
   const [passwordError, setPasswordError] = useState("");
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
 
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login } = useAuth();
-
-  const [modalMessage, setModalMessage] = useState("");
-  const [showModal, setShowModal] = useState(false);
 
   const isButtonEnabled = email && password && !emailError && !passwordError;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
     try {
       await login(email, password);
-      router.push("/market");
+
+      // redirect 또는 from 쿼리로 이전 위치 복구
+      const qpRedirect =
+        searchParams.get("redirect") || searchParams.get("from");
+      // 안전한 내부 경로만 허용 (외부 URL 차단)
+      const safeRedirect =
+        qpRedirect && qpRedirect.startsWith("/") && !qpRedirect.startsWith("//")
+          ? qpRedirect
+          : null;
+
+      // 로그인 페이지/회원가입 페이지로 돌아가려는 경우는 /market로 보정
+      const go =
+        safeRedirect && !["/login", "/signup"].includes(safeRedirect)
+          ? safeRedirect
+          : "/market";
+
+      router.replace(go);
     } catch (err) {
-      if (err.message.includes("존재하지")) {
+      const msg = err?.message || "";
+      if (msg.includes("존재하지"))
         setModalMessage("존재하지 않는 이메일입니다.");
-      } else if (err.message.includes("비밀번호")) {
+      else if (msg.includes("비밀번호"))
         setModalMessage("비밀번호가 일치하지 않습니다.");
-      } else {
-        setModalMessage("로그인에 실패했습니다.");
-      }
+      else setModalMessage("로그인에 실패했습니다.");
       setShowModal(true);
     } finally {
       setLoading(false);
