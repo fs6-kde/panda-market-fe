@@ -34,13 +34,19 @@ export default function Header() {
 
   useEffect(() => {
     const onClickOutside = (e) => {
-      if (!menuRef.current) return;
-      if (!menuRef.current.contains(e.target)) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
         setIsMenuOpen(false);
       }
     };
+    const onEsc = (e) => {
+      if (e.key === "Escape") setIsMenuOpen(false);
+    };
     document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
+    document.addEventListener("keydown", onEsc);
+    return () => {
+      document.removeEventListener("mousedown", onClickOutside);
+      document.removeEventListener("keydown", onEsc);
+    };
   }, []);
 
   const handleLogoutClick = async () => {
@@ -59,10 +65,13 @@ export default function Header() {
     }
   };
 
+  // 인증자는 로고를 눌러도 랜딩이 아니라 /market 으로
+  const logoHref = user ? "/market" : "/";
+
   return (
     <header className="fixed top-0 left-0 w-full h-[60px] flex items-center justify-between px-4 xl:px-[200px] bg-white border-b border-gray-200 z-[999] shadow-sm">
       <div className="flex items-center max-w-[1200px] w-full mx-auto">
-        <Link href="/">
+        <Link href={logoHref}>
           <Image
             src={Logo}
             alt="판다마켓 로고"
@@ -105,8 +114,6 @@ export default function Header() {
               type="button"
               onClick={() => setIsMenuOpen((v) => !v)}
               className="flex items-center gap-2 md:gap-2"
-              aria-haspopup="menu"
-              aria-expanded={isMenuOpen}
             >
               <Image
                 src={Profile}
@@ -121,12 +128,8 @@ export default function Header() {
             </button>
 
             {isMenuOpen && (
-              <div
-                role="menu"
-                className="absolute left-0 top-8 mt-2 w-25 bg-white border border-gray-200 rounded-lg shadow-md z-10"
-              >
+              <div className="absolute left-0 top-8 mt-2 w-25 bg-white border border-gray-200 rounded-lg shadow-md z-10">
                 <button
-                  role="menuitem"
                   className="w-full py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-lg"
                   onClick={handleLogoutClick}
                 >

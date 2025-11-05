@@ -9,8 +9,24 @@ import hotitem from "@/assests/Img_home_01.svg";
 import search from "@/assests/Img_home_02.svg";
 import register from "@/assests/Img_home_03.svg";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/providers/AuthProvider";
+import { useEffect } from "react";
 
 export default function HomePage() {
+  const router = useRouter();
+  const { user, isLoading } = useAuth();
+
+  // 인증자는 랜딩 접근 차단
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.replace("/market");
+    }
+  }, [user, isLoading, router]);
+
+  // 로딩 중이거나 인증자 리다이렉트 중이면 렌더링하지 않음
+  if (isLoading || user) return null;
+
   return (
     <div className="w-full">
       {/* 상단 Hero 영역 */}
