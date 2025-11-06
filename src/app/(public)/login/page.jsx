@@ -11,6 +11,31 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/providers/AuthProvider";
 import ErrorModal from "@/components/ui/ErrorModal";
 
+// 절대 URL이라도 동일 사이트이면 pathname(+query+hash)만 뽑아 쓰는 보조함수
+// 로그인 후 직전 페이지로 돌아갈 때 안전한 경로인지 검사 및 정제해주는 보안 필터 함수
+function getSafeRedirect(raw) {
+  if (!raw) return null;
+
+  // 내부 상대경로면 바로 허용
+  if (raw.startsWith("/") && !raw.startsWith("//")) return raw;
+
+  try {
+    // 절대 URL이라면 브라우저 기준으로 파싱
+    const url = new URL(raw, window.location.origin);
+
+    // 같은 사이트라면 안전, 경로만 추출
+    if (url.origin === window.location.origin) {
+      return url.pathname + url.search + url.hash;
+    }
+  } catch {
+    // 파싱 실패 시 그냥 무시
+  }
+
+  // 외부 사이트만 null 반환 -> 그냥 마켓 페이지로 이동
+  return null;
+}
+// => 이 redirect가 내부 페이지 이동만 가능하도록 제한, 아닐 시 마켓 페이지로 돌린다
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,21 +59,13 @@ export default function Login() {
     try {
       await login(email, password);
 
-      // redirect 또는 from 쿼리로 이전 위치 복구
-      const qpRedirect =
-        searchParams.get("redirect") || searchParams.get("from");
-      // 안전한 내부 경로만 허용 (외부 URL 차단)
-      const safeRedirect =
-        qpRedirect && qpRedirect.startsWith("/") && !qpRedirect.startsWith("//")
-          ? qpRedirect
-          : null;
+      // RequireAuth에서 붙여준 redirect(or from) 복구
+      const raw = searchParams.get("redirect") || searchParams.get("from");
+      const safe = getSafeRedirect(raw);
 
-      // 로그인 페이지/회원가입 페이지로 돌아가려는 경우는 /market로 보정
+      // 로그인/회원가입으로 되돌아가는 루프 방지
       const go =
-        safeRedirect && !["/login", "/signup"].includes(safeRedirect)
-          ? safeRedirect
-          : "/market";
-
+        safe && !["/login", "/signup"].includes(safe) ? safe : "/market";
       router.replace(go);
     } catch (err) {
       const msg = err?.message || "";

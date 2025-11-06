@@ -2,30 +2,26 @@
 
 import { useEffect } from "react";
 import { useAuth } from "@/providers/AuthProvider";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 export default function RequireAuth({ children }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (isLoading) return; // 로딩 중엔 대기
+    if (isLoading) return;
+
     if (!user) {
-      // 로그인 후 원래 위치로 돌아가도록 next 파라미터 포함
-      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+      const search = searchParams?.toString();
+      const current = pathname + (search ? `?${search}` : "");
+      // 현재 경로를 redirect로 붙여 로그인으로 이동
+      router.replace(`/login?redirect=${encodeURIComponent(current)}`);
     }
-  }, [isLoading, user, pathname, router]);
+  }, [isLoading, user, pathname, searchParams, router]);
 
-  if (isLoading) {
-    return (
-      <div className="w-full py-16 flex items-center justify-center text-gray-500">
-        인증 확인 중...
-      </div>
-    );
-  }
+  if (!user) return null; // or 스켈레톤
 
-  if (!user) return null; // 리다이렉트 직전 빈 화면
-
-  return <>{children}</>;
+  return children;
 }
